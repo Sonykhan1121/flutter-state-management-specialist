@@ -15,6 +15,12 @@ This branch implements the same complete movie app with modern Riverpod
 - Stale-request protection for rapid searches
 - Bundled offline demo catalog
 
+## Screenshots
+
+| Movie catalog | Movie details |
+| --- | --- |
+| <img src="docs/screenshots/provider-movie-list.png" alt="Provider movie catalog with search, genre filters, sorting, ratings, and favorites" width="100%"> | <img src="docs/screenshots/provider-movie-details.png" alt="Provider movie details screen with rating, genres, plot, director, cast, and IMDb ID" width="100%"> |
+
 ## Run it
 
 ```sh
