@@ -22,11 +22,17 @@ flutter pub get
 flutter run
 ```
 
-The bundled catalog is used when no API key is supplied. To query OMDb:
+The bundled catalog is used when no API key is supplied. This checkout already
+has an ignored local `omdb.json`. To make your own local config, copy and edit
+the safe template:
 
 ```sh
-flutter run --dart-define=OMDB_API_KEY=your_key_here
+cp omdb.example.json omdb.json
+flutter run --dart-define-from-file=omdb.json
 ```
+
+The API key is inserted centrally by `OmdbMovieRepository._buildUri`, so every
+OMDb search and detail request includes the `apikey` query parameter.
 
 OMDb is an independent service and is not affiliated with IMDb. Its search
 response does not contain genres or ratings, so this learning app hydrates the
