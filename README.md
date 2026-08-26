@@ -1,18 +1,52 @@
-# Flutter State Management Specialist
+# Flutter State Management Specialist — Provider
 
-A branch-by-branch learning repository for building the same Flutter movie app
-with two state-management approaches.
+This branch implements the complete movie app with `provider` and
+`ChangeNotifier`.
 
-## Branches
+## Features
 
-- `main` — project brief and the original Flutter starter.
-- `provider` — complete app using `provider` and `ChangeNotifier`.
-- `riverpod` — the same app using modern Riverpod providers/notifiers.
+- Movie list and debounced search
+- Genre filter
+- Sort by IMDb rating or release year
+- Favorite/unfavorite from the list or details screen
+- Movie details
+- Favorites screen
+- Loading, refresh, empty, and error states
+- Stale-request protection for rapid searches
+- Bundled offline demo catalog
 
-Both implementations cover movie search, genre filtering, rating/year sorting,
-favorite/unfavorite actions, movie details, and a favorites screen. They use
-OMDb when an API key is supplied and bundled demo data otherwise.
+## Run it
 
-Start with the `provider` branch and follow its learning guide. Then compare it
-with `riverpod`; keeping the product requirements the same makes the state-
-management tradeoffs easier to see.
+```sh
+flutter pub get
+flutter run
+```
+
+The bundled catalog is used when no API key is supplied. To query OMDb:
+
+```sh
+flutter run --dart-define=OMDB_API_KEY=your_key_here
+```
+
+OMDb is an independent service and is not affiliated with IMDb. Its search
+response does not contain genres or ratings, so this learning app hydrates the
+first ten results with detail calls, then filters and sorts that page locally.
+For a production app, add caching, pagination, request throttling, and a backend
+that protects the key.
+
+## Learn the architecture
+
+Read [PROVIDER_SPECIALIST_GUIDE.md](PROVIDER_SPECIALIST_GUIDE.md), then explore:
+
+- `lib/app.dart` — dependency creation and provider scope
+- `lib/state/movie_catalog_controller.dart` — async and derived state
+- `lib/state/favorites_controller.dart` — small independent state
+- `lib/screens/home_screen.dart` — `read`, `Consumer`, and `Selector`
+- `lib/data/movie_repository.dart` — API boundary and testable abstraction
+
+Run the checks with:
+
+```sh
+flutter analyze
+flutter test
+```
