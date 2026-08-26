@@ -177,7 +177,12 @@ class _CatalogControls extends StatelessWidget {
                 padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
                 child: Row(
                   children: [
-                    Text('${catalog.visibleMovies.length} movies'),
+                    Text(
+                      catalog.totalResults > catalog.visibleMovies.length
+                          ? '${catalog.visibleMovies.length} loaded · '
+                              '${catalog.totalResults} results'
+                          : '${catalog.visibleMovies.length} movies',
+                    ),
                     const Spacer(),
                     const Text('Sort: '),
                     DropdownButton<MovieSort>(
@@ -229,9 +234,7 @@ class _CatalogBody extends StatelessWidget {
             },
           );
         }
-        if (catalog.visibleMovies.isEmpty) {
-          return const _EmptyState();
-        }
+        if (catalog.visibleMovies.isEmpty) return const _EmptyState();
 
         return Column(
           children: [
@@ -242,27 +245,49 @@ class _CatalogBody extends StatelessWidget {
                   if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
                     return const SizedBox.shrink();
                   }
-                  return RefreshIndicator(
-                    onRefresh: () async {
-                      final bloc = context.read<MovieCatalogBloc>();
-                      bloc.add(const CatalogRetryRequested());
-                      await bloc.stream.firstWhere(
-                        (state) => state.status != CatalogStatus.loading,
-                      );
+                  return NotificationListener<ScrollNotification>(
+                    onNotification: (notification) {
+                      if (notification.metrics.axis == Axis.vertical &&
+                          notification.metrics.extentAfter < 600) {
+                        context.read<MovieCatalogBloc>().add(
+                          const CatalogLoadMoreRequested(),
+                        );
+                      }
+                      return false;
                     },
-                    child: GridView.builder(
-                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                      gridDelegate:
-                          const SliverGridDelegateWithMaxCrossAxisExtent(
-                            maxCrossAxisExtent: 220,
-                            mainAxisSpacing: 14,
-                            crossAxisSpacing: 14,
-                            childAspectRatio: 0.60,
+                    child: RefreshIndicator(
+                      onRefresh: () async {
+                        final bloc = context.read<MovieCatalogBloc>();
+                        bloc.add(const CatalogRetryRequested());
+                        await bloc.stream.firstWhere(
+                          (state) => state.status != CatalogStatus.loading,
+                        );
+                      },
+                      child: CustomScrollView(
+                        physics: const AlwaysScrollableScrollPhysics(),
+                        slivers: [
+                          SliverPadding(
+                            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+                            sliver: SliverGrid.builder(
+                              gridDelegate:
+                                  const SliverGridDelegateWithMaxCrossAxisExtent(
+                                    maxCrossAxisExtent: 220,
+                                    mainAxisSpacing: 14,
+                                    crossAxisSpacing: 14,
+                                    childAspectRatio: 0.60,
+                                  ),
+                              itemCount: catalog.visibleMovies.length,
+                              itemBuilder:
+                                  (context, index) => MovieCard(
+                                    movie: catalog.visibleMovies[index],
+                                  ),
+                            ),
                           ),
-                      itemCount: catalog.visibleMovies.length,
-                      itemBuilder:
-                          (context, index) =>
-                              MovieCard(movie: catalog.visibleMovies[index]),
+                          SliverToBoxAdapter(
+                            child: _CatalogFooter(catalog: catalog),
+                          ),
+                        ],
+                      ),
                     ),
                   );
                 },
@@ -271,6 +296,63 @@ class _CatalogBody extends StatelessWidget {
           ],
         );
       },
+    );
+  }
+}
+
+class _CatalogFooter extends StatelessWidget {
+  const _CatalogFooter({required this.catalog});
+
+  final MovieCatalogState catalog;
+
+  @override
+  Widget build(BuildContext context) {
+    void loadMore() =>
+        context.read<MovieCatalogBloc>().add(const CatalogLoadMoreRequested());
+
+    if (catalog.isLoadingMore) {
+      return const Padding(
+        padding: EdgeInsets.all(24),
+        child: Center(
+          child: SizedBox.square(
+            dimension: 28,
+            child: CircularProgressIndicator(strokeWidth: 3),
+          ),
+        ),
+      );
+    }
+    if (catalog.loadMoreError != null) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: Column(
+          children: [
+            Text(
+              catalog.loadMoreError!,
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+            TextButton.icon(
+              onPressed: loadMore,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Retry loading more'),
+            ),
+          ],
+        ),
+      );
+    }
+    if (catalog.hasMore) {
+      return Padding(
+        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
+        child: OutlinedButton.icon(
+          onPressed: loadMore,
+          icon: const Icon(Icons.expand_more),
+          label: const Text('Load more'),
+        ),
+      );
+    }
+    return const Padding(
+      padding: EdgeInsets.fromLTRB(16, 12, 16, 24),
+      child: Center(child: Text('You have reached the end.')),
     );
   }
 }

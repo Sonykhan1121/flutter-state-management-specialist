@@ -73,4 +73,42 @@ void main() {
               ),
         ],
   );
+
+  blocTest<MovieCatalogBloc, MovieCatalogState>(
+    'loads another page and appends unique movies',
+    build:
+        () => MovieCatalogBloc(
+          FakeMovieRepository(
+            testMovies,
+            pages: {1: testMovies, 2: moreTestMovies},
+          ),
+        ),
+    act: (bloc) async {
+      bloc.add(const CatalogLoadRequested());
+      await bloc.stream.firstWhere(
+        (state) => state.status == CatalogStatus.success,
+      );
+      bloc.add(const CatalogLoadMoreRequested());
+    },
+    expect:
+        () => [
+          isA<MovieCatalogState>().having(
+            (state) => state.status,
+            'status',
+            CatalogStatus.loading,
+          ),
+          isA<MovieCatalogState>()
+              .having((state) => state.page, 'page', 1)
+              .having((state) => state.hasMore, 'has more', isTrue),
+          isA<MovieCatalogState>().having(
+            (state) => state.isLoadingMore,
+            'is loading more',
+            isTrue,
+          ),
+          isA<MovieCatalogState>()
+              .having((state) => state.page, 'page', 2)
+              .having((state) => state.visibleMovies.length, 'movie count', 3)
+              .having((state) => state.hasMore, 'has more', isFalse),
+        ],
+  );
 }

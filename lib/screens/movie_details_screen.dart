@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 import '../bloc/favorites_cubit.dart';
+import '../data/trailer_repository.dart';
 import '../models/movie.dart';
 import '../widgets/movie_poster.dart';
+import 'trailer_screen.dart';
 
 class MovieDetailsScreen extends StatelessWidget {
   const MovieDetailsScreen({super.key, required this.movie});
@@ -114,6 +116,22 @@ class _MovieInformation extends StatelessWidget {
           children: [
             for (final genre in movie.genres) Chip(label: Text(genre)),
           ],
+        ),
+        const SizedBox(height: 18),
+        FilledButton.icon(
+          key: const Key('watch-trailer-button'),
+          onPressed:
+              () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder:
+                      (_) => TrailerScreen(
+                        movie: movie,
+                        repository: context.read<TrailerRepository>(),
+                      ),
+                ),
+              ),
+          icon: const Icon(Icons.play_circle_fill),
+          label: const Text('Watch trailer'),
         ),
         const SizedBox(height: 20),
         Text(movie.plot, style: Theme.of(context).textTheme.bodyLarge),

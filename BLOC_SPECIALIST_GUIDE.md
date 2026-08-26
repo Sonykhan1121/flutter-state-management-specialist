@@ -49,9 +49,9 @@ in one application.
 
 ### `RepositoryProvider<T>`
 
-Provides a repository or service without making it reactive UI state. In this
-app it exposes `MovieRepository`, which `MovieCatalogBloc` receives through
-constructor injection.
+Provides a repository or service without making it reactive UI state. This app
+exposes movie, SQLite favorites, and YouTube trailer repositories. The catalog
+Bloc and favorites Cubit receive their dependencies through constructors.
 
 ### `BlocProvider<T>` and `MultiBlocProvider`
 
@@ -134,6 +134,21 @@ The debounce timer stays in `_HomeScreenState` because it is a short-lived input
 detail. Moving it into the Bloc could also be valid when multiple views produce
 search events or the timing rule is part of product behavior.
 
+`CatalogLoadMoreRequested` uses separate `isLoadingMore` and `loadMoreError`
+fields. This preserves earlier pages if the next request fails and makes the
+bottom spinner/retry state explicit. Results are appended by IMDb ID to prevent
+duplicates while the active genre and sort remain derived from all loaded
+pages.
+
+`FavoritesCubit` loads complete movie records from `FavoritesRepository` and
+performs optimistic SQLite writes. A failed write rolls the state back. The
+storage interface is replaced with an in-memory fake in tests, so neither Cubit
+nor widgets depend directly on the database plugin.
+
+Trailer lookup is also repository-backed, but its loading/player lifecycle is
+local to the trailer route. Use a Bloc only when the state is shared or the
+transition complexity benefits from one; not every `Future` needs an event.
+
 ## 6. Bloc strengths
 
 - Explicit inputs and outputs make state changes traceable.
@@ -212,8 +227,8 @@ a production state model should have an intentional equality policy.
 - Assert meaningful fields, not every implementation detail of a state.
 - Inject a fake repository rather than adding test flags to production logic.
 - Widget-test the composition root and user-visible behavior.
-- Cover success, empty, error, retry, filtering, sorting, favorite removal, and
-  stale-response protection.
+- Cover success, empty, error, retry, filtering, sorting, next-page append,
+  favorite persistence/removal, trailer lookup, and stale-response protection.
 - Test observers and side effects separately from state reducers.
 
 ## 10. Compare Provider, Riverpod, and Bloc
@@ -239,8 +254,8 @@ Complete these in order:
 
 1. Add `MovieSort.titleAZ` with a Bloc test.
 2. Show a snack bar on repository failure using `BlocListener`.
-3. Persist favorites behind a `FavoritesRepository` injected into the Cubit.
-4. Add pagination with separate initial-load and load-more states.
+3. Add a SQLite schema version 2 migration and test it through the repository.
+4. Add cached search pages with an expiry timestamp and force-refresh event.
 5. Replace request IDs with a `restartable` search transformer and test races.
 6. Add `Equatable` or generated immutable states; explain equality behavior.
 7. Add a global `BlocObserver` that records events, transitions, and errors.

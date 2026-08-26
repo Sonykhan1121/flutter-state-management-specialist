@@ -33,6 +33,10 @@ final class CatalogRetryRequested extends MovieCatalogEvent {
   const CatalogRetryRequested();
 }
 
+final class CatalogLoadMoreRequested extends MovieCatalogEvent {
+  const CatalogLoadMoreRequested();
+}
+
 final class CatalogGenreChanged extends MovieCatalogEvent {
   const CatalogGenreChanged(this.genre);
 
@@ -53,6 +57,11 @@ class MovieCatalogState {
     this.genre,
     this.query = '',
     this.errorMessage,
+    this.loadMoreError,
+    this.page = 0,
+    this.totalResults = 0,
+    this.hasMore = false,
+    this.isLoadingMore = false,
   });
 
   final List<Movie> movies;
@@ -61,6 +70,11 @@ class MovieCatalogState {
   final String? genre;
   final String query;
   final String? errorMessage;
+  final String? loadMoreError;
+  final int page;
+  final int totalResults;
+  final bool hasMore;
+  final bool isLoadingMore;
 
   bool get isRefreshing => status == CatalogStatus.loading && movies.isNotEmpty;
 
@@ -92,6 +106,12 @@ class MovieCatalogState {
     String? query,
     String? errorMessage,
     bool clearError = false,
+    String? loadMoreError,
+    bool clearLoadMoreError = false,
+    int? page,
+    int? totalResults,
+    bool? hasMore,
+    bool? isLoadingMore,
   }) {
     return MovieCatalogState(
       movies: movies ?? this.movies,
@@ -100,6 +120,12 @@ class MovieCatalogState {
       genre: clearGenre ? null : genre ?? this.genre,
       query: query ?? this.query,
       errorMessage: clearError ? null : errorMessage ?? this.errorMessage,
+      loadMoreError:
+          clearLoadMoreError ? null : loadMoreError ?? this.loadMoreError,
+      page: page ?? this.page,
+      totalResults: totalResults ?? this.totalResults,
+      hasMore: hasMore ?? this.hasMore,
+      isLoadingMore: isLoadingMore ?? this.isLoadingMore,
     );
   }
 }
@@ -109,6 +135,7 @@ class MovieCatalogBloc extends Bloc<MovieCatalogEvent, MovieCatalogState> {
     on<CatalogLoadRequested>((_, emit) => _fetch('', emit));
     on<CatalogSearchRequested>((event, emit) => _fetch(event.query, emit));
     on<CatalogRetryRequested>((_, emit) => _fetch(state.query, emit));
+    on<CatalogLoadMoreRequested>(_onLoadMore);
     on<CatalogGenreChanged>(_onGenreChanged);
     on<CatalogSortChanged>(_onSortChanged);
   }
@@ -124,20 +151,25 @@ class MovieCatalogBloc extends Bloc<MovieCatalogEvent, MovieCatalogState> {
         status: CatalogStatus.loading,
         query: normalizedQuery,
         clearError: true,
+        clearLoadMoreError: true,
+        isLoadingMore: false,
       ),
     );
 
     try {
-      final movies = await _repository.searchMovies(normalizedQuery);
+      final result = await _repository.searchMovies(normalizedQuery);
       if (requestId != _requestId || emit.isDone) return;
-      final genres = movies.expand((movie) => movie.genres).toSet();
+      final genres = result.movies.expand((movie) => movie.genres).toSet();
       final selectedGenre = state.genre;
       emit(
         state.copyWith(
-          movies: List.unmodifiable(movies),
+          movies: List.unmodifiable(result.movies),
           status: CatalogStatus.success,
           clearGenre: selectedGenre != null && !genres.contains(selectedGenre),
           clearError: true,
+          page: result.page,
+          totalResults: result.totalResults,
+          hasMore: result.hasMore,
         ),
       );
     } catch (error) {
@@ -147,6 +179,44 @@ class MovieCatalogBloc extends Bloc<MovieCatalogEvent, MovieCatalogState> {
           status: CatalogStatus.error,
           errorMessage: error.toString(),
         ),
+      );
+    }
+  }
+
+  Future<void> _onLoadMore(
+    CatalogLoadMoreRequested event,
+    Emitter<MovieCatalogState> emit,
+  ) async {
+    if (state.isLoadingMore ||
+        !state.hasMore ||
+        state.status == CatalogStatus.loading) {
+      return;
+    }
+    final requestId = _requestId;
+    final query = state.query;
+    final nextPage = state.page + 1;
+    emit(state.copyWith(isLoadingMore: true, clearLoadMoreError: true));
+
+    try {
+      final result = await _repository.searchMovies(query, page: nextPage);
+      if (requestId != _requestId || emit.isDone) return;
+      final byId = {for (final movie in state.movies) movie.id: movie};
+      for (final movie in result.movies) {
+        byId[movie.id] = movie;
+      }
+      emit(
+        state.copyWith(
+          movies: List.unmodifiable(byId.values),
+          page: result.page,
+          totalResults: result.totalResults,
+          hasMore: result.hasMore,
+          isLoadingMore: false,
+        ),
+      );
+    } catch (error) {
+      if (requestId != _requestId || emit.isDone) return;
+      emit(
+        state.copyWith(loadMoreError: error.toString(), isLoadingMore: false),
       );
     }
   }
