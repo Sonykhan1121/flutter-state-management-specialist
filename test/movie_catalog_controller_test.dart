@@ -32,4 +32,21 @@ void main() {
     expect(controller.status, CatalogStatus.error);
     expect(controller.errorMessage, contains('offline'));
   });
+
+  test('loads another page and appends unique movies', () async {
+    final repository = FakeMovieRepository(
+      testMovies,
+      pages: {1: testMovies, 2: moreTestMovies},
+    );
+    final controller = MovieCatalogController(repository);
+
+    await controller.load();
+    expect(controller.hasMore, isTrue);
+
+    await controller.loadMore();
+
+    expect(repository.requestedPages, [1, 2]);
+    expect(controller.visibleMovies.length, 3);
+    expect(controller.hasMore, isFalse);
+  });
 }

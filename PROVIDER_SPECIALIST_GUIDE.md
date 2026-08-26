@@ -119,10 +119,31 @@ response cannot replace a newer query. The controller also avoids notifying
 after disposal. These details separate demo-grade async code from reliable
 state management.
 
-For production, also consider cancellation, caching, offline behavior, request
-timeouts, pagination, and structured error types.
+`loadMore()` has a separate loading/error state so a failed second page does not
+erase the first page. It appends by IMDb ID to avoid duplicates and preserves
+the active genre and sort. The UI watches scroll extent and also exposes a
+manual load-more/retry button.
 
-## 5. Provider strengths
+For production, also consider cancellation, caching, offline behavior, request
+timeouts, API quotas, and structured error types.
+
+## 5. Persistence is a repository concern
+
+`FavoritesRepository` separates persistence from reactive state. The default
+implementation stores complete favorite movie records in SQLite; tests inject
+an in-memory fake. `FavoritesController` loads once at startup and performs an
+optimistic toggle, rolling the UI back if the database write fails.
+
+Provider does not make SQLite reactive by itself. The repository owns storage;
+the controller owns the in-memory snapshot and calls `notifyListeners()` after
+meaningful changes. This boundary also makes a future migration to another
+database possible without rewriting widgets.
+
+Trailer lookup follows the same dependency rule. `TrailerRepository` searches
+YouTube when a key exists, while the route owns the short-lived loading/player
+state. Not every asynchronous value needs an app-wide `ChangeNotifier`.
+
+## 6. Provider strengths
 
 - Small API and close alignment with Flutter's `InheritedWidget` model.
 - Easy to introduce gradually in an existing Flutter app.
@@ -132,7 +153,7 @@ timeouts, pagination, and structured error types.
 - Constructor injection keeps business logic testable.
 - Mature ecosystem, documentation, and community knowledge.
 
-## 6. Provider tradeoffs
+## 7. Provider tradeoffs
 
 - Dependencies are runtime lookups; a missing or incorrectly scoped provider
   fails at runtime rather than compile time.
@@ -151,7 +172,7 @@ timeouts, pagination, and structured error types.
 These are engineering tradeoffs, not reasons that Provider is bad. Provider is
 excellent for small and medium apps when the team maintains clear boundaries.
 
-## 7. Common mistakes and fixes
+## 8. Common mistakes and fixes
 
 ### Calling `watch` in an event callback
 
@@ -189,22 +210,25 @@ only when profiling proves it is needed. Notify only after source state changes.
 Pass plain dependencies and data instead. Navigation and visual feedback stay
 at the UI boundary.
 
-## 8. Testing strategy
+## 9. Testing strategy
 
 - Unit-test controller transitions using a fake `MovieRepository`.
 - Widget-test provider wiring and user-visible behavior.
 - Override the dependency at the app composition root rather than adding test
   flags to production logic.
+- Test pagination with deterministic fake pages and persistence with a fake
+  `FavoritesRepository`; do not require a platform SQLite plugin in widget
+  tests.
 - Verify failure, empty, retry, out-of-order response, filtering, sorting, and
   favorite removal—not only the happy path.
 
-## 9. Deliberate practice roadmap
+## 10. Deliberate practice roadmap
 
 Complete these in order:
 
 1. Add a `MovieSort.titleAZ` option and its test.
-2. Persist favorites behind a `FavoritesRepository` using shared preferences.
-3. Add pagination while preserving the selected genre and sort.
+2. Add a schema version 2 migration and a `notes` column for favorites.
+3. Add request caching in SQLite with an expiry timestamp.
 4. Add an authenticated settings object and inject it with `ProxyProvider`.
 5. Profile rebuilds in DevTools; replace one broad consumer with a selector and
    explain the measured difference.
@@ -213,7 +237,7 @@ Complete these in order:
 8. Rebuild the same requirements on the `riverpod` branch and compare code,
    tests, lifecycle handling, overrides, and async state—not line counts alone.
 
-## 10. Specialist checklist
+## 11. Specialist checklist
 
 You can reasonably call yourself a Provider specialist when you can:
 

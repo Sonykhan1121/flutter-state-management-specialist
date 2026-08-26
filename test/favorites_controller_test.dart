@@ -4,16 +4,20 @@ import 'package:provider_project/state/favorites_controller.dart';
 import 'fakes.dart';
 
 void main() {
-  test('toggle adds and removes a favorite', () {
-    final favorites = FavoritesController();
+  test('loads persisted favorites, then toggle adds and removes', () async {
+    final repository = FakeFavoritesRepository([testMovies.last]);
+    final favorites = FavoritesController(repository);
     final movie = testMovies.first;
 
-    favorites.toggle(movie);
-    expect(favorites.isFavorite(movie.id), isTrue);
-    expect(favorites.count, 1);
+    await favorites.load();
+    expect(favorites.isFavorite(testMovies.last.id), isTrue);
 
-    favorites.toggle(movie);
+    await favorites.toggle(movie);
+    expect(favorites.isFavorite(movie.id), isTrue);
+    expect(favorites.count, 2);
+
+    await favorites.toggle(movie);
     expect(favorites.isFavorite(movie.id), isFalse);
-    expect(favorites.movies, isEmpty);
+    expect(favorites.count, 1);
   });
 }

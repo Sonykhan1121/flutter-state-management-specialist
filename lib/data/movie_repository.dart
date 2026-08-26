@@ -6,7 +6,21 @@ import '../models/movie.dart';
 import 'sample_movies.dart';
 
 abstract interface class MovieRepository {
-  Future<List<Movie>> searchMovies(String query);
+  Future<MoviePage> searchMovies(String query, {int page = 1});
+}
+
+class MoviePage {
+  const MoviePage({
+    required this.movies,
+    required this.page,
+    required this.totalResults,
+    required this.hasMore,
+  });
+
+  final List<Movie> movies;
+  final int page;
+  final int totalResults;
+  final bool hasMore;
 }
 
 MovieRepository createMovieRepository() {
@@ -20,23 +34,31 @@ class SampleMovieRepository implements MovieRepository {
   const SampleMovieRepository();
 
   @override
-  Future<List<Movie>> searchMovies(String query) async {
+  Future<MoviePage> searchMovies(String query, {int page = 1}) async {
     await Future<void>.delayed(const Duration(milliseconds: 250));
     final needle = query.trim().toLowerCase();
-    if (needle.isEmpty) return sampleMovies;
-
-    return sampleMovies
-        .where((movie) {
-          final searchable =
-              [
-                movie.title,
-                movie.plot,
-                movie.director,
-                ...movie.genres,
-              ].join(' ').toLowerCase();
-          return searchable.contains(needle);
-        })
-        .toList(growable: false);
+    final matches =
+        needle.isEmpty
+            ? sampleMovies
+            : sampleMovies
+                .where((movie) {
+                  final searchable =
+                      [
+                        movie.title,
+                        movie.plot,
+                        movie.director,
+                        ...movie.genres,
+                      ].join(' ').toLowerCase();
+                  return searchable.contains(needle);
+                })
+                .toList(growable: false);
+    final movies = page == 1 ? matches : const <Movie>[];
+    return MoviePage(
+      movies: List.unmodifiable(movies),
+      page: page,
+      totalResults: matches.length,
+      hasMore: false,
+    );
   }
 }
 
@@ -47,17 +69,25 @@ class OmdbMovieRepository implements MovieRepository {
   final String apiKey;
 
   @override
-  Future<List<Movie>> searchMovies(String query) async {
+  Future<MoviePage> searchMovies(String query, {int page = 1}) async {
     final searchTerm = query.trim().isEmpty ? 'star' : query.trim();
-    final uri = _buildUri({'s': searchTerm, 'type': 'movie'});
+    final uri = _buildUri({'s': searchTerm, 'type': 'movie', 'page': '$page'});
     final payload = await _getJson(uri);
 
     if (payload['Response'] == 'False') {
       final message = '${payload['Error'] ?? 'Movie search failed.'}';
-      if (message.toLowerCase().contains('not found')) return const [];
+      if (message.toLowerCase().contains('not found')) {
+        return MoviePage(
+          movies: const [],
+          page: page,
+          totalResults: 0,
+          hasMore: false,
+        );
+      }
       throw MovieRepositoryException(message);
     }
 
+    final totalResults = int.tryParse('${payload['totalResults'] ?? ''}') ?? 0;
     final results = (payload['Search'] as List<dynamic>? ?? const [])
         .whereType<Map<String, dynamic>>()
         .take(10);
@@ -72,7 +102,12 @@ class OmdbMovieRepository implements MovieRepository {
         }
       }),
     );
-    return movies.whereType<Movie>().toList(growable: false);
+    return MoviePage(
+      movies: movies.whereType<Movie>().toList(growable: false),
+      page: page,
+      totalResults: totalResults,
+      hasMore: page * 10 < totalResults,
+    );
   }
 
   Future<Movie> _getDetails(String imdbId) async {

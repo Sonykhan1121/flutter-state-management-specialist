@@ -25,6 +25,11 @@ class MovieCatalogController extends ChangeNotifier {
   String? _genre;
   String _query = '';
   String? _errorMessage;
+  String? _loadMoreError;
+  int _page = 0;
+  int _totalResults = 0;
+  bool _hasMore = false;
+  bool _isLoadingMore = false;
   int _requestId = 0;
   bool _disposed = false;
 
@@ -33,6 +38,11 @@ class MovieCatalogController extends ChangeNotifier {
   String? get genre => _genre;
   String get query => _query;
   String? get errorMessage => _errorMessage;
+  String? get loadMoreError => _loadMoreError;
+  int get page => _page;
+  int get totalResults => _totalResults;
+  bool get hasMore => _hasMore;
+  bool get isLoadingMore => _isLoadingMore;
   bool get isRefreshing =>
       _status == CatalogStatus.loading && _movies.isNotEmpty;
 
@@ -62,12 +72,17 @@ class MovieCatalogController extends ChangeNotifier {
     _query = query.trim();
     _status = CatalogStatus.loading;
     _errorMessage = null;
+    _loadMoreError = null;
+    _isLoadingMore = false;
     _notify();
 
     try {
-      final movies = await _repository.searchMovies(_query);
+      final result = await _repository.searchMovies(_query);
       if (requestId != _requestId || _disposed) return;
-      _movies = movies;
+      _movies = result.movies;
+      _page = result.page;
+      _totalResults = result.totalResults;
+      _hasMore = result.hasMore;
       final genres = availableGenres;
       if (_genre != null && !genres.contains(_genre)) _genre = null;
       _status = CatalogStatus.success;
@@ -80,6 +95,38 @@ class MovieCatalogController extends ChangeNotifier {
   }
 
   Future<void> retry() => search(_query);
+
+  Future<void> loadMore() async {
+    if (_isLoadingMore || !_hasMore || _status == CatalogStatus.loading) {
+      return;
+    }
+    final requestId = _requestId;
+    final query = _query;
+    _isLoadingMore = true;
+    _loadMoreError = null;
+    _notify();
+
+    try {
+      final result = await _repository.searchMovies(query, page: _page + 1);
+      if (requestId != _requestId || _disposed) return;
+      final byId = {for (final movie in _movies) movie.id: movie};
+      for (final movie in result.movies) {
+        byId[movie.id] = movie;
+      }
+      _movies = List.unmodifiable(byId.values);
+      _page = result.page;
+      _totalResults = result.totalResults;
+      _hasMore = result.hasMore;
+    } catch (error) {
+      if (requestId != _requestId || _disposed) return;
+      _loadMoreError = error.toString();
+    } finally {
+      if (requestId == _requestId && !_disposed) {
+        _isLoadingMore = false;
+        _notify();
+      }
+    }
+  }
 
   void setGenre(String? genre) {
     if (_genre == genre) return;

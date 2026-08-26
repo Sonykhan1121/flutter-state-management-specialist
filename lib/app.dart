@@ -1,15 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'data/favorites_repository.dart';
 import 'data/movie_repository.dart';
+import 'data/trailer_repository.dart';
 import 'screens/home_screen.dart';
 import 'state/favorites_controller.dart';
 import 'state/movie_catalog_controller.dart';
 
 class MovieApp extends StatelessWidget {
-  const MovieApp({super.key, this.repository});
+  const MovieApp({
+    super.key,
+    this.repository,
+    this.favoritesRepository,
+    this.trailerRepository,
+  });
 
   final MovieRepository? repository;
+  final FavoritesRepository? favoritesRepository;
+  final TrailerRepository? trailerRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -18,13 +27,24 @@ class MovieApp extends StatelessWidget {
         Provider<MovieRepository>.value(
           value: repository ?? createMovieRepository(),
         ),
+        Provider<FavoritesRepository>.value(
+          value: favoritesRepository ?? createFavoritesRepository(),
+        ),
+        Provider<TrailerRepository>.value(
+          value: trailerRepository ?? createTrailerRepository(),
+        ),
         ChangeNotifierProvider(
           create:
               (context) =>
                   MovieCatalogController(context.read<MovieRepository>())
                     ..load(),
         ),
-        ChangeNotifierProvider(create: (_) => FavoritesController()),
+        ChangeNotifierProvider(
+          create:
+              (context) =>
+                  FavoritesController(context.read<FavoritesRepository>())
+                    ..load(),
+        ),
       ],
       child: MaterialApp(
         debugShowCheckedModeBanner: false,
