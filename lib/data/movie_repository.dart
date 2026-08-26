@@ -49,11 +49,7 @@ class OmdbMovieRepository implements MovieRepository {
   @override
   Future<List<Movie>> searchMovies(String query) async {
     final searchTerm = query.trim().isEmpty ? 'star' : query.trim();
-    final uri = Uri.https('www.omdbapi.com', '/', {
-      'apikey': apiKey,
-      's': searchTerm,
-      'type': 'movie',
-    });
+    final uri = _buildUri({'s': searchTerm, 'type': 'movie'});
     final payload = await _getJson(uri);
 
     if (payload['Response'] == 'False') {
@@ -80,11 +76,7 @@ class OmdbMovieRepository implements MovieRepository {
   }
 
   Future<Movie> _getDetails(String imdbId) async {
-    final uri = Uri.https('www.omdbapi.com', '/', {
-      'apikey': apiKey,
-      'i': imdbId,
-      'plot': 'full',
-    });
+    final uri = _buildUri({'i': imdbId, 'plot': 'full'});
     final payload = await _getJson(uri);
     if (payload['Response'] == 'False') {
       throw MovieRepositoryException(
@@ -92,6 +84,10 @@ class OmdbMovieRepository implements MovieRepository {
       );
     }
     return Movie.fromOmdb(payload);
+  }
+
+  Uri _buildUri(Map<String, String> parameters) {
+    return Uri.https('www.omdbapi.com', '/', {'apikey': apiKey, ...parameters});
   }
 
   Future<Map<String, dynamic>> _getJson(Uri uri) async {
