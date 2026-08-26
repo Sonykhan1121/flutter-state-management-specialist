@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../bloc/favorites_cubit.dart';
 import '../models/movie.dart';
 import '../screens/movie_details_screen.dart';
-import '../state/favorites_controller.dart';
 import 'movie_poster.dart';
 
 class MovieCard extends StatelessWidget {
@@ -33,19 +33,18 @@ class MovieCard extends StatelessWidget {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: Selector<FavoritesController, bool>(
-                      selector:
-                          (_, favorites) => favorites.isFavorite(movie.id),
+                    child: BlocSelector<FavoritesCubit, FavoritesState, bool>(
+                      selector: (favorites) => favorites.isFavorite(movie.id),
                       builder:
-                          (context, isFavorite, _) => IconButton.filledTonal(
+                          (context, isFavorite) => IconButton.filledTonal(
                             tooltip:
                                 isFavorite
                                     ? 'Remove ${movie.title} from favorites'
                                     : 'Add ${movie.title} to favorites',
                             onPressed:
-                                () => context
-                                    .read<FavoritesController>()
-                                    .toggle(movie),
+                                () => context.read<FavoritesCubit>().toggle(
+                                  movie,
+                                ),
                             icon: Icon(
                               isFavorite
                                   ? Icons.favorite

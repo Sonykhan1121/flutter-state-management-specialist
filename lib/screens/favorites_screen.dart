@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../state/favorites_controller.dart';
+import '../bloc/favorites_cubit.dart';
 import '../widgets/movie_card.dart';
 
 class FavoritesScreen extends StatelessWidget {
@@ -11,8 +11,8 @@ class FavoritesScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Favorites')),
-      body: Consumer<FavoritesController>(
-        builder: (context, favorites, _) {
+      body: BlocBuilder<FavoritesCubit, FavoritesState>(
+        builder: (context, favorites) {
           final movies = favorites.movies;
           if (movies.isEmpty) {
             return const Center(

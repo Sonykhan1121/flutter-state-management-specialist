@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
+import '../bloc/favorites_cubit.dart';
 import '../models/movie.dart';
-import '../state/favorites_controller.dart';
 import '../widgets/movie_poster.dart';
 
 class MovieDetailsScreen extends StatelessWidget {
@@ -16,14 +16,13 @@ class MovieDetailsScreen extends StatelessWidget {
       appBar: AppBar(
         title: const Text('Movie details'),
         actions: [
-          Selector<FavoritesController, bool>(
-            selector: (_, favorites) => favorites.isFavorite(movie.id),
+          BlocSelector<FavoritesCubit, FavoritesState, bool>(
+            selector: (favorites) => favorites.isFavorite(movie.id),
             builder:
-                (context, isFavorite, _) => IconButton(
+                (context, isFavorite) => IconButton(
                   tooltip:
                       isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                  onPressed:
-                      () => context.read<FavoritesController>().toggle(movie),
+                  onPressed: () => context.read<FavoritesCubit>().toggle(movie),
                   icon: Icon(
                     isFavorite ? Icons.favorite : Icons.favorite_border,
                     color: isFavorite ? Colors.redAccent : null,

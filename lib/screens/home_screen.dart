@@ -1,10 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../state/favorites_controller.dart';
-import '../state/movie_catalog_controller.dart';
+import '../bloc/favorites_cubit.dart';
+import '../bloc/movie_catalog_bloc.dart';
 import '../widgets/movie_card.dart';
 import 'favorites_screen.dart';
 
@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _debounce?.cancel();
     _debounce = Timer(
       const Duration(milliseconds: 450),
-      () => context.read<MovieCatalogController>().search(value),
+      () => context.read<MovieCatalogBloc>().add(CatalogSearchRequested(value)),
     );
   }
 
@@ -56,7 +56,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 onChanged: _scheduleSearch,
                 onSubmitted: (value) {
                   _debounce?.cancel();
-                  context.read<MovieCatalogController>().search(value);
+                  context.read<MovieCatalogBloc>().add(
+                    CatalogSearchRequested(value),
+                  );
                 },
                 decoration: InputDecoration(
                   hintText: 'Search IMDb movies',
@@ -112,10 +114,10 @@ class _FavoritesAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<FavoritesController, int>(
-      selector: (_, favorites) => favorites.count,
+    return BlocSelector<FavoritesCubit, FavoritesState, int>(
+      selector: (favorites) => favorites.count,
       builder:
-          (context, count, _) => Badge(
+          (context, count) => Badge(
             isLabelVisible: count > 0,
             label: Text('$count'),
             child: IconButton(
@@ -138,9 +140,9 @@ class _CatalogControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MovieCatalogController>(
+    return BlocBuilder<MovieCatalogBloc, MovieCatalogState>(
       builder:
-          (context, catalog, _) => Column(
+          (context, catalog) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               SizedBox(
@@ -152,14 +154,20 @@ class _CatalogControls extends StatelessWidget {
                     ChoiceChip(
                       label: const Text('All genres'),
                       selected: catalog.genre == null,
-                      onSelected: (_) => catalog.setGenre(null),
+                      onSelected:
+                          (_) => context.read<MovieCatalogBloc>().add(
+                            const CatalogGenreChanged(null),
+                          ),
                     ),
                     for (final genre in catalog.availableGenres) ...[
                       const SizedBox(width: 8),
                       ChoiceChip(
                         label: Text(genre),
                         selected: catalog.genre == genre,
-                        onSelected: (_) => catalog.setGenre(genre),
+                        onSelected:
+                            (_) => context.read<MovieCatalogBloc>().add(
+                              CatalogGenreChanged(genre),
+                            ),
                       ),
                     ],
                   ],
@@ -176,7 +184,11 @@ class _CatalogControls extends StatelessWidget {
                       value: catalog.sort,
                       underline: const SizedBox.shrink(),
                       onChanged: (value) {
-                        if (value != null) catalog.setSort(value);
+                        if (value != null) {
+                          context.read<MovieCatalogBloc>().add(
+                            CatalogSortChanged(value),
+                          );
+                        }
                       },
                       items: [
                         for (final sort in MovieSort.values)
@@ -200,8 +212,8 @@ class _CatalogBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MovieCatalogController>(
-      builder: (context, catalog, _) {
+    return BlocBuilder<MovieCatalogBloc, MovieCatalogState>(
+      builder: (context, catalog) {
         if (catalog.status == CatalogStatus.loading &&
             catalog.visibleMovies.isEmpty) {
           return const Center(child: CircularProgressIndicator());
@@ -210,7 +222,11 @@ class _CatalogBody extends StatelessWidget {
             catalog.visibleMovies.isEmpty) {
           return _ErrorState(
             message: catalog.errorMessage ?? 'Could not load movies.',
-            onRetry: catalog.retry,
+            onRetry: () async {
+              context.read<MovieCatalogBloc>().add(
+                const CatalogRetryRequested(),
+              );
+            },
           );
         }
         if (catalog.visibleMovies.isEmpty) {
@@ -227,7 +243,13 @@ class _CatalogBody extends StatelessWidget {
                     return const SizedBox.shrink();
                   }
                   return RefreshIndicator(
-                    onRefresh: catalog.retry,
+                    onRefresh: () async {
+                      final bloc = context.read<MovieCatalogBloc>();
+                      bloc.add(const CatalogRetryRequested());
+                      await bloc.stream.firstWhere(
+                        (state) => state.status != CatalogStatus.loading,
+                      );
+                    },
                     child: GridView.builder(
                       padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
                       gridDelegate:
