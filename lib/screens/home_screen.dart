@@ -222,21 +222,28 @@ class _CatalogBody extends ConsumerWidget {
       children: [
         if (catalog.isRefreshing) const LinearProgressIndicator(),
         Expanded(
-          child: RefreshIndicator(
-            onRefresh: notifier.retry,
-            child: GridView.builder(
-              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                maxCrossAxisExtent: 220,
-                mainAxisSpacing: 14,
-                crossAxisSpacing: 14,
-                childAspectRatio: 0.60,
-              ),
-              itemCount: catalog.visibleMovies.length,
-              itemBuilder:
-                  (context, index) =>
-                      MovieCard(movie: catalog.visibleMovies[index]),
-            ),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              if (constraints.maxWidth <= 0 || constraints.maxHeight <= 0) {
+                return const SizedBox.shrink();
+              }
+              return RefreshIndicator(
+                onRefresh: notifier.retry,
+                child: GridView.builder(
+                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                    maxCrossAxisExtent: 220,
+                    mainAxisSpacing: 14,
+                    crossAxisSpacing: 14,
+                    childAspectRatio: 0.60,
+                  ),
+                  itemCount: catalog.visibleMovies.length,
+                  itemBuilder:
+                      (context, index) =>
+                          MovieCard(movie: catalog.visibleMovies[index]),
+                ),
+              );
+            },
           ),
         ),
       ],
