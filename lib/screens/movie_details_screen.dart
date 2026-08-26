@@ -1,34 +1,31 @@
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../models/movie.dart';
-import '../state/favorites_controller.dart';
+import '../state/movie_providers.dart';
 import '../widgets/movie_poster.dart';
 
-class MovieDetailsScreen extends StatelessWidget {
+class MovieDetailsScreen extends ConsumerWidget {
   const MovieDetailsScreen({super.key, required this.movie});
 
   final Movie movie;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final isFavorite = ref.watch(isFavoriteProvider(movie.id));
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Movie details'),
         actions: [
-          Selector<FavoritesController, bool>(
-            selector: (_, favorites) => favorites.isFavorite(movie.id),
-            builder:
-                (context, isFavorite, _) => IconButton(
-                  tooltip:
-                      isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                  onPressed:
-                      () => context.read<FavoritesController>().toggle(movie),
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.redAccent : null,
-                  ),
-                ),
+          IconButton(
+            tooltip: isFavorite ? 'Remove from favorites' : 'Add to favorites',
+            onPressed:
+                () => ref.read(favoriteMoviesProvider.notifier).toggle(movie),
+            icon: Icon(
+              isFavorite ? Icons.favorite : Icons.favorite_border,
+              color: isFavorite ? Colors.redAccent : null,
+            ),
           ),
           const SizedBox(width: 8),
         ],

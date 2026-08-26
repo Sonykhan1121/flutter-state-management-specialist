@@ -1,23 +1,30 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../state/favorites_controller.dart';
-import '../state/movie_catalog_controller.dart';
+import '../state/movie_providers.dart';
 import '../widgets/movie_card.dart';
 import 'favorites_screen.dart';
 
-class HomeScreen extends StatefulWidget {
+class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});
 
   @override
-  State<HomeScreen> createState() => _HomeScreenState();
+  ConsumerState<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeScreenState extends State<HomeScreen> {
+class _HomeScreenState extends ConsumerState<HomeScreen> {
   final _searchController = TextEditingController();
   Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) ref.read(movieCatalogProvider.notifier).load();
+    });
+  }
 
   @override
   void dispose() {
@@ -30,7 +37,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _debounce?.cancel();
     _debounce = Timer(
       const Duration(milliseconds: 450),
-      () => context.read<MovieCatalogController>().search(value),
+      () => ref.read(movieCatalogProvider.notifier).search(value),
     );
   }
 
@@ -56,7 +63,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onChanged: _scheduleSearch,
                 onSubmitted: (value) {
                   _debounce?.cancel();
-                  context.read<MovieCatalogController>().search(value);
+                  ref.read(movieCatalogProvider.notifier).search(value);
                 },
                 decoration: InputDecoration(
                   hintText: 'Search IMDb movies',
@@ -107,140 +114,132 @@ class _BrandMark extends StatelessWidget {
   }
 }
 
-class _FavoritesAction extends StatelessWidget {
+class _FavoritesAction extends ConsumerWidget {
   const _FavoritesAction();
 
   @override
-  Widget build(BuildContext context) {
-    return Selector<FavoritesController, int>(
-      selector: (_, favorites) => favorites.count,
-      builder:
-          (context, count, _) => Badge(
-            isLabelVisible: count > 0,
-            label: Text('$count'),
-            child: IconButton(
-              tooltip: 'Favorites',
-              onPressed:
-                  () => Navigator.of(context).push(
-                    MaterialPageRoute<void>(
-                      builder: (_) => const FavoritesScreen(),
-                    ),
-                  ),
-              icon: const Icon(Icons.favorite_outline),
+  Widget build(BuildContext context, WidgetRef ref) {
+    final count = ref.watch(
+      favoriteMoviesProvider.select((movies) => movies.length),
+    );
+    return Badge(
+      isLabelVisible: count > 0,
+      label: Text('$count'),
+      child: IconButton(
+        tooltip: 'Favorites',
+        onPressed:
+            () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => const FavoritesScreen()),
             ),
-          ),
+        icon: const Icon(Icons.favorite_outline),
+      ),
     );
   }
 }
 
-class _CatalogControls extends StatelessWidget {
+class _CatalogControls extends ConsumerWidget {
   const _CatalogControls();
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<MovieCatalogController>(
-      builder:
-          (context, catalog, _) => Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(movieCatalogProvider);
+    final notifier = ref.read(movieCatalogProvider.notifier);
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        SizedBox(
+          height: 42,
+          child: ListView(
+            padding: const EdgeInsets.symmetric(horizontal: 16),
+            scrollDirection: Axis.horizontal,
             children: [
-              SizedBox(
-                height: 42,
-                child: ListView(
-                  padding: const EdgeInsets.symmetric(horizontal: 16),
-                  scrollDirection: Axis.horizontal,
-                  children: [
-                    ChoiceChip(
-                      label: const Text('All genres'),
-                      selected: catalog.genre == null,
-                      onSelected: (_) => catalog.setGenre(null),
-                    ),
-                    for (final genre in catalog.availableGenres) ...[
-                      const SizedBox(width: 8),
-                      ChoiceChip(
-                        label: Text(genre),
-                        selected: catalog.genre == genre,
-                        onSelected: (_) => catalog.setGenre(genre),
-                      ),
-                    ],
-                  ],
-                ),
+              ChoiceChip(
+                label: const Text('All genres'),
+                selected: catalog.genre == null,
+                onSelected: (_) => notifier.setGenre(null),
               ),
-              Padding(
-                padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
-                child: Row(
-                  children: [
-                    Text('${catalog.visibleMovies.length} movies'),
-                    const Spacer(),
-                    const Text('Sort: '),
-                    DropdownButton<MovieSort>(
-                      value: catalog.sort,
-                      underline: const SizedBox.shrink(),
-                      onChanged: (value) {
-                        if (value != null) catalog.setSort(value);
-                      },
-                      items: [
-                        for (final sort in MovieSort.values)
-                          DropdownMenuItem(
-                            value: sort,
-                            child: Text(sort.label),
-                          ),
-                      ],
-                    ),
-                  ],
+              for (final genre in catalog.availableGenres) ...[
+                const SizedBox(width: 8),
+                ChoiceChip(
+                  label: Text(genre),
+                  selected: catalog.genre == genre,
+                  onSelected: (_) => notifier.setGenre(genre),
                 ),
+              ],
+            ],
+          ),
+        ),
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+          child: Row(
+            children: [
+              Text('${catalog.visibleMovies.length} movies'),
+              const Spacer(),
+              const Text('Sort: '),
+              DropdownButton<MovieSort>(
+                value: catalog.sort,
+                underline: const SizedBox.shrink(),
+                onChanged: (value) {
+                  if (value != null) notifier.setSort(value);
+                },
+                items: [
+                  for (final sort in MovieSort.values)
+                    DropdownMenuItem(value: sort, child: Text(sort.label)),
+                ],
               ),
             ],
           ),
+        ),
+      ],
     );
   }
 }
 
-class _CatalogBody extends StatelessWidget {
+class _CatalogBody extends ConsumerWidget {
   const _CatalogBody();
 
   @override
-  Widget build(BuildContext context) {
-    return Consumer<MovieCatalogController>(
-      builder: (context, catalog, _) {
-        if (catalog.status == CatalogStatus.loading &&
-            catalog.visibleMovies.isEmpty) {
-          return const Center(child: CircularProgressIndicator());
-        }
-        if (catalog.status == CatalogStatus.error &&
-            catalog.visibleMovies.isEmpty) {
-          return _ErrorState(
-            message: catalog.errorMessage ?? 'Could not load movies.',
-            onRetry: catalog.retry,
-          );
-        }
-        if (catalog.visibleMovies.isEmpty) {
-          return const _EmptyState();
-        }
+  Widget build(BuildContext context, WidgetRef ref) {
+    final catalog = ref.watch(movieCatalogProvider);
+    final notifier = ref.read(movieCatalogProvider.notifier);
 
-        return Column(
-          children: [
-            if (catalog.isRefreshing) const LinearProgressIndicator(),
-            Expanded(
-              child: RefreshIndicator(
-                onRefresh: catalog.retry,
-                child: GridView.builder(
-                  padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
-                  gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
-                    maxCrossAxisExtent: 220,
-                    mainAxisSpacing: 14,
-                    crossAxisSpacing: 14,
-                    childAspectRatio: 0.60,
-                  ),
-                  itemCount: catalog.visibleMovies.length,
-                  itemBuilder:
-                      (context, index) =>
-                          MovieCard(movie: catalog.visibleMovies[index]),
-                ),
+    if ((catalog.status == CatalogStatus.initial ||
+            catalog.status == CatalogStatus.loading) &&
+        catalog.visibleMovies.isEmpty) {
+      return const Center(child: CircularProgressIndicator());
+    }
+    if (catalog.status == CatalogStatus.error &&
+        catalog.visibleMovies.isEmpty) {
+      return _ErrorState(
+        message: catalog.errorMessage ?? 'Could not load movies.',
+        onRetry: notifier.retry,
+      );
+    }
+    if (catalog.visibleMovies.isEmpty) return const _EmptyState();
+
+    return Column(
+      children: [
+        if (catalog.isRefreshing) const LinearProgressIndicator(),
+        Expanded(
+          child: RefreshIndicator(
+            onRefresh: notifier.retry,
+            child: GridView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+              gridDelegate: const SliverGridDelegateWithMaxCrossAxisExtent(
+                maxCrossAxisExtent: 220,
+                mainAxisSpacing: 14,
+                crossAxisSpacing: 14,
+                childAspectRatio: 0.60,
               ),
+              itemCount: catalog.visibleMovies.length,
+              itemBuilder:
+                  (context, index) =>
+                      MovieCard(movie: catalog.visibleMovies[index]),
             ),
-          ],
-        );
-      },
+          ),
+        ),
+      ],
     );
   }
 }

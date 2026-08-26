@@ -1,7 +1,7 @@
-# Flutter State Management Specialist — Provider
+# Flutter State Management Specialist — Riverpod
 
-This branch implements the complete movie app with `provider` and
-`ChangeNotifier`.
+This branch implements the same complete movie app with modern Riverpod
+`NotifierProvider`s and immutable state.
 
 ## Features
 
@@ -34,14 +34,13 @@ first ten results with detail calls, then filters and sorts that page locally.
 For a production app, add caching, pagination, request throttling, and a backend
 that protects the key.
 
-## Learn the architecture
+## Compare the architecture
 
-Read [PROVIDER_SPECIALIST_GUIDE.md](PROVIDER_SPECIALIST_GUIDE.md), then explore:
+Read [RIVERPOD_COMPARISON_GUIDE.md](RIVERPOD_COMPARISON_GUIDE.md), then explore:
 
-- `lib/app.dart` — dependency creation and provider scope
-- `lib/state/movie_catalog_controller.dart` — async and derived state
-- `lib/state/favorites_controller.dart` — small independent state
-- `lib/screens/home_screen.dart` — `read`, `Consumer`, and `Selector`
+- `lib/app.dart` — `ProviderScope` and test overrides
+- `lib/state/movie_providers.dart` — immutable state and notifiers
+- `lib/screens/home_screen.dart` — `ref.read`, `ref.watch`, and `.select`
 - `lib/data/movie_repository.dart` — API boundary and testable abstraction
 
 Run the checks with:
