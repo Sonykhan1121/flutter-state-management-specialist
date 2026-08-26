@@ -10,6 +10,7 @@ to inspect without confusing them with unrelated app changes.
 | --- | --- |
 | `MultiProvider` | `ProviderScope` plus top-level provider declarations |
 | `Provider<MovieRepository>` | `Provider<MovieRepository>` |
+| `Provider<FavoritesRepository>` | overridable repository provider |
 | `ChangeNotifierProvider` | `NotifierProvider` |
 | mutable private fields | immutable `MovieCatalogState` |
 | `notifyListeners()` | assign a new `state` value |
@@ -51,16 +52,22 @@ to inspect without confusing them with unrelated app changes.
 
 `MovieCatalogNotifier` exposes one immutable `MovieCatalogState`. Assigning to
 `state` notifies listeners automatically. It retains request IDs so an older
-search result cannot overwrite a newer one.
+search result cannot overwrite a newer one. Pagination has independent
+`isLoadingMore` and `loadMoreError` fields, so a page-two failure preserves the
+already loaded movies. New pages are deduplicated by IMDb ID.
 
-`FavoriteMoviesNotifier` stores an immutable map. `isFavoriteProvider` is a
-family that selects only membership for one movie ID, while the app-bar count
-selects only map length. This is the Riverpod equivalent of Provider's
-`Selector` optimization.
+`FavoriteMoviesNotifier` loads complete movie records from SQLite through an
+overridable `FavoritesRepository`, then stores an immutable map. It performs
+optimistic writes and rolls state back on storage failure.
+`isFavoriteProvider` is a family that selects only membership for one movie ID,
+while the app-bar count selects only map length. This is the Riverpod equivalent
+of Provider's `Selector` optimization.
 
-The repository provider is overridden in tests. No test-only switch is added to
-production code, and notifiers do not know whether the dependency is real or a
-fake.
+Movie, favorites, and trailer repositories are overridden in tests. No
+test-only switch is added to production code, and notifiers do not know whether
+a dependency is real or fake. The YouTube player route keeps its short-lived
+loading/player lifecycle local while obtaining the repository through Riverpod;
+not every `Future` needs to become an application-wide provider.
 
 The app uses an explicit status object for a close comparison with the Provider
 branch. As an exercise, migrate the catalog to `AsyncNotifierProvider` and use
@@ -74,9 +81,12 @@ clear.
    family and `.select`.
 3. Compare controller tests with `ProviderContainer` tests.
 4. Add title sorting to both branches and note where state mutation differs.
-5. Add persisted favorites to both using the same repository interface.
+5. Add a SQLite schema migration and test it through the same repository
+   interface on both branches.
 6. Profile rebuilds in Flutter DevTools rather than assuming either is faster.
-7. Decide which approach your team can debug most confidently six months later.
+7. Replace request IDs with a cancellable/restartable search design and test
+   rapid queries.
+8. Decide which approach your team can debug most confidently six months later.
 
 Choose based on project complexity, team knowledge, test needs, and lifecycle
 requirements. Both approaches can produce a maintainable app when state

@@ -9,7 +9,10 @@ void main() {
     tester,
   ) async {
     await tester.pumpWidget(
-      MovieApp(repository: FakeMovieRepository(testMovies)),
+      MovieApp(
+        repository: FakeMovieRepository(testMovies),
+        favoritesRepository: FakeFavoritesRepository(),
+      ),
     );
     await tester.pumpAndSettle();
 

@@ -52,4 +52,26 @@ void main() {
     expect(catalog.status, CatalogStatus.error);
     expect(catalog.errorMessage, contains('offline'));
   });
+
+  test('loads another page and appends unique movies', () async {
+    final repository = FakeMovieRepository(
+      testMovies,
+      pages: {1: testMovies, 2: moreTestMovies},
+    );
+    final container = ProviderContainer(
+      overrides: [movieRepositoryProvider.overrideWithValue(repository)],
+    );
+    addTearDown(container.dispose);
+    final notifier = container.read(movieCatalogProvider.notifier);
+
+    await notifier.load();
+    expect(container.read(movieCatalogProvider).hasMore, isTrue);
+
+    await notifier.loadMore();
+
+    final catalog = container.read(movieCatalogProvider);
+    expect(repository.requestedPages, [1, 2]);
+    expect(catalog.visibleMovies.length, 3);
+    expect(catalog.hasMore, isFalse);
+  });
 }

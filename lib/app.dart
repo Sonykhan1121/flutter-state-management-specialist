@@ -1,14 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'data/favorites_repository.dart';
 import 'data/movie_repository.dart';
+import 'data/trailer_repository.dart';
 import 'screens/home_screen.dart';
 import 'state/movie_providers.dart';
 
 class MovieApp extends StatelessWidget {
-  const MovieApp({super.key, this.repository});
+  const MovieApp({
+    super.key,
+    this.repository,
+    this.favoritesRepository,
+    this.trailerRepository,
+  });
 
   final MovieRepository? repository;
+  final FavoritesRepository? favoritesRepository;
+  final TrailerRepository? trailerRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -16,6 +25,10 @@ class MovieApp extends StatelessWidget {
       overrides: [
         if (repository != null)
           movieRepositoryProvider.overrideWithValue(repository!),
+        if (favoritesRepository != null)
+          favoritesRepositoryProvider.overrideWithValue(favoritesRepository!),
+        if (trailerRepository != null)
+          trailerRepositoryProvider.overrideWithValue(trailerRepository!),
       ],
       child: const _MovieMaterialApp(),
     );

@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../data/trailer_repository.dart';
 import '../models/movie.dart';
 import '../state/movie_providers.dart';
 import '../widgets/movie_poster.dart';
+import 'trailer_screen.dart';
 
 class MovieDetailsScreen extends ConsumerWidget {
   const MovieDetailsScreen({super.key, required this.movie});
@@ -42,7 +44,10 @@ class MovieDetailsScreen extends ConsumerWidget {
               borderRadius: BorderRadius.circular(16),
             ),
           );
-          final details = _MovieInformation(movie: movie);
+          final details = _MovieInformation(
+            movie: movie,
+            trailerRepository: ref.read(trailerRepositoryProvider),
+          );
 
           return SingleChildScrollView(
             padding: const EdgeInsets.all(20),
@@ -76,9 +81,13 @@ class MovieDetailsScreen extends ConsumerWidget {
 }
 
 class _MovieInformation extends StatelessWidget {
-  const _MovieInformation({required this.movie});
+  const _MovieInformation({
+    required this.movie,
+    required this.trailerRepository,
+  });
 
   final Movie movie;
+  final TrailerRepository trailerRepository;
 
   @override
   Widget build(BuildContext context) {
@@ -112,6 +121,22 @@ class _MovieInformation extends StatelessWidget {
           children: [
             for (final genre in movie.genres) Chip(label: Text(genre)),
           ],
+        ),
+        const SizedBox(height: 18),
+        FilledButton.icon(
+          key: const Key('watch-trailer-button'),
+          onPressed:
+              () => Navigator.of(context).push(
+                MaterialPageRoute<void>(
+                  builder:
+                      (_) => TrailerScreen(
+                        movie: movie,
+                        repository: trailerRepository,
+                      ),
+                ),
+              ),
+          icon: const Icon(Icons.play_circle_fill),
+          label: const Text('Watch trailer'),
         ),
         const SizedBox(height: 20),
         Text(movie.plot, style: Theme.of(context).textTheme.bodyLarge),
