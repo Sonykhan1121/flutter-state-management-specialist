@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider_project/state/movie_providers.dart';
+import 'package:provider_project/presentation/view_models/movie_providers.dart';
 
 import 'fakes.dart';
 

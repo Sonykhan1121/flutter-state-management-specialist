@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'data/favorites_repository.dart';
-import 'data/movie_repository.dart';
-import 'data/trailer_repository.dart';
-import 'screens/home_screen.dart';
-import 'state/movie_providers.dart';
+import 'package:provider_project/domain/repositories/favorites_repository.dart';
+import 'package:provider_project/domain/repositories/movie_repository.dart';
+import 'package:provider_project/domain/repositories/trailer_repository.dart';
+import 'package:provider_project/presentation/views/home_screen.dart';
+import 'package:provider_project/presentation/view_models/movie_providers.dart';
 
 class MovieApp extends StatelessWidget {
   const MovieApp({

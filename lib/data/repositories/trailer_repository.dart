@@ -1,30 +1,9 @@
 import 'dart:convert';
+import '../../domain/repositories/trailer_repository.dart';
 
 import 'package:http/http.dart' as http;
 
-import '../models/movie.dart';
-
-class Trailer {
-  const Trailer({required this.videoId, required this.title});
-
-  final String videoId;
-  final String title;
-
-  Uri get watchUri => Uri.https('www.youtube.com', '/watch', {'v': videoId});
-}
-
-abstract interface class TrailerRepository {
-  bool get canSearchAutomatically;
-
-  Future<Trailer?> findTrailer(Movie movie);
-
-  Uri youtubeSearchUri(Movie movie);
-}
-
-TrailerRepository createTrailerRepository() {
-  const apiKey = String.fromEnvironment('YOUTUBE_API_KEY');
-  return YoutubeTrailerRepository(client: http.Client(), apiKey: apiKey);
-}
+import 'package:provider_project/domain/models/movie.dart';
 
 class YoutubeTrailerRepository implements TrailerRepository {
   YoutubeTrailerRepository({required this.client, required this.apiKey});
@@ -86,13 +65,4 @@ class YoutubeTrailerRepository implements TrailerRepository {
       .replaceAll('&amp;', '&')
       .replaceAll('&#39;', "'")
       .replaceAll('&quot;', '"');
-}
-
-class TrailerRepositoryException implements Exception {
-  const TrailerRepositoryException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }

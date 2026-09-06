@@ -3,9 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../state/movie_providers.dart';
-import '../widgets/movie_card.dart';
-import 'favorites_screen.dart';
+import 'package:provider_project/presentation/view_models/movie_providers.dart';
+import 'package:provider_project/presentation/widgets/movie_card.dart';
+import 'package:provider_project/presentation/views/favorites_screen.dart';
 
 class HomeScreen extends ConsumerStatefulWidget {
   const HomeScreen({super.key});

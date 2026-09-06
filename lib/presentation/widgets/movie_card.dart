@@ -1,20 +1,17 @@
+import 'favorite_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../models/movie.dart';
-import '../screens/movie_details_screen.dart';
-import '../state/movie_providers.dart';
-import 'movie_poster.dart';
+import 'package:provider_project/domain/models/movie.dart';
+import 'package:provider_project/presentation/views/movie_details_screen.dart';
+import 'package:provider_project/presentation/widgets/movie_poster.dart';
 
-class MovieCard extends ConsumerWidget {
+class MovieCard extends StatelessWidget {
   const MovieCard({super.key, required this.movie});
 
   final Movie movie;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
-    final isFavorite = ref.watch(isFavoriteProvider(movie.id));
-
+  Widget build(BuildContext context) {
     return Card(
       margin: EdgeInsets.zero,
       child: InkWell(
@@ -35,20 +32,7 @@ class MovieCard extends ConsumerWidget {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: IconButton.filledTonal(
-                      tooltip:
-                          isFavorite
-                              ? 'Remove ${movie.title} from favorites'
-                              : 'Add ${movie.title} to favorites',
-                      onPressed:
-                          () => ref
-                              .read(favoriteMoviesProvider.notifier)
-                              .toggle(movie),
-                      icon: Icon(
-                        isFavorite ? Icons.favorite : Icons.favorite_border,
-                        color: isFavorite ? Colors.redAccent : null,
-                      ),
-                    ),
+                    child: FavoriteButton(movie: movie, filled: true),
                   ),
                 ],
               ),

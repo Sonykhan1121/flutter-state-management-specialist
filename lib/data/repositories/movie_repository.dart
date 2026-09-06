@@ -1,34 +1,11 @@
 import 'dart:convert';
+import '../mappers/omdb_movie_mapper.dart';
+import '../../domain/repositories/movie_repository.dart';
 
 import 'package:http/http.dart' as http;
 
-import '../models/movie.dart';
-import 'sample_movies.dart';
-
-abstract interface class MovieRepository {
-  Future<MoviePage> searchMovies(String query, {int page = 1});
-}
-
-class MoviePage {
-  const MoviePage({
-    required this.movies,
-    required this.page,
-    required this.totalResults,
-    required this.hasMore,
-  });
-
-  final List<Movie> movies;
-  final int page;
-  final int totalResults;
-  final bool hasMore;
-}
-
-MovieRepository createMovieRepository() {
-  const apiKey = String.fromEnvironment('OMDB_API_KEY');
-  return apiKey.trim().isEmpty
-      ? const SampleMovieRepository()
-      : OmdbMovieRepository(client: http.Client(), apiKey: apiKey);
-}
+import 'package:provider_project/domain/models/movie.dart';
+import 'package:provider_project/data/local/sample_movies.dart';
 
 class SampleMovieRepository implements MovieRepository {
   const SampleMovieRepository();
@@ -118,7 +95,7 @@ class OmdbMovieRepository implements MovieRepository {
         '${payload['Error'] ?? 'Details failed.'}',
       );
     }
-    return Movie.fromOmdb(payload);
+    return OmdbMovieMapper.fromJson(payload);
   }
 
   Uri _buildUri(Map<String, String> parameters) {
@@ -138,13 +115,4 @@ class OmdbMovieRepository implements MovieRepository {
     }
     return decoded;
   }
-}
-
-class MovieRepositoryException implements Exception {
-  const MovieRepositoryException(this.message);
-
-  final String message;
-
-  @override
-  String toString() => message;
 }

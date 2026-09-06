@@ -28,9 +28,7 @@ flutter pub get
 flutter run
 ```
 
-The bundled catalog is used when no API key is supplied. This checkout already
-has an ignored local `omdb.json`. To make your own local config, copy and edit
-the safe template:
+The bundled catalog is used when no API key is supplied. To make a local config, copy and edit the ignored config from the safe template:
 
 ```sh
 cp omdb.example.json omdb.json
@@ -59,12 +57,12 @@ a backend that protects API keys.
 Read [RIVERPOD_COMPARISON_GUIDE.md](RIVERPOD_COMPARISON_GUIDE.md), then explore:
 
 - `lib/app.dart` — `ProviderScope` and test overrides
-- `lib/state/movie_providers.dart` — immutable state and notifiers
-- `lib/screens/home_screen.dart` — `ref.read`, `ref.watch`, and `.select`
-- `lib/data/movie_repository.dart` — API boundary and testable abstraction
-- `lib/data/favorites_repository.dart` — SQLite schema and persistence
-- `lib/data/trailer_repository.dart` — YouTube Data API search
-- `lib/screens/trailer_screen.dart` — inline YouTube player and fallback
+- `lib/presentation/view_models/movie_providers.dart` — immutable state and notifiers
+- `lib/presentation/views/home_screen.dart` — `ref.read`, `ref.watch`, and `.select`
+- `lib/data/repositories/movie_repository.dart` — API boundary and testable abstraction
+- `lib/domain/repositories/favorites_repository.dart` — storage interface (implementation and schema are described in the MVVM guide)
+- `lib/data/repositories/trailer_repository.dart` — YouTube Data API search
+- `lib/presentation/views/trailer_screen.dart` — inline YouTube player and fallback
 
 Run the checks with:
 
@@ -72,3 +70,7 @@ Run the checks with:
 flutter analyze
 flutter test
 ```
+
+## SQLite and MVVM
+
+Read [MVVM_SQLITE_GUIDE.md](MVVM_SQLITE_GUIDE.md) for the architecture, database, tests, and exercises.

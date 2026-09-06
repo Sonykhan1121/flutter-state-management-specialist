@@ -1,31 +1,7 @@
-class Movie {
-  const Movie({
-    required this.id,
-    required this.title,
-    required this.year,
-    required this.genres,
-    required this.rating,
-    required this.posterUrl,
-    required this.plot,
-    required this.director,
-    required this.actors,
-    required this.runtime,
-    required this.rated,
-  });
+import '../../domain/models/movie.dart';
 
-  final String id;
-  final String title;
-  final int year;
-  final List<String> genres;
-  final double rating;
-  final String posterUrl;
-  final String plot;
-  final String director;
-  final String actors;
-  final String runtime;
-  final String rated;
-
-  factory Movie.fromOmdb(Map<String, dynamic> json) {
+class OmdbMovieMapper {
+  static Movie fromJson(Map<String, dynamic> json) {
     final yearMatch = RegExp(r'\d{4}').firstMatch('${json['Year'] ?? ''}');
     final poster = '${json['Poster'] ?? ''}';
 
