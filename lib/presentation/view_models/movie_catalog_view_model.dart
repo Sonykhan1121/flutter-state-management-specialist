@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart';
 
-import '../data/movie_repository.dart';
-import '../models/movie.dart';
+import 'package:provider_project/domain/repositories/movie_repository.dart';
+import 'package:provider_project/domain/models/movie.dart';
 
 enum CatalogStatus { initial, loading, success, error }
 
@@ -15,8 +15,8 @@ extension MovieSortLabel on MovieSort {
   };
 }
 
-class MovieCatalogController extends ChangeNotifier {
-  MovieCatalogController(this._repository);
+class MovieCatalogViewModel extends ChangeNotifier {
+  MovieCatalogViewModel(this._repository);
 
   final MovieRepository _repository;
   List<Movie> _movies = const [];

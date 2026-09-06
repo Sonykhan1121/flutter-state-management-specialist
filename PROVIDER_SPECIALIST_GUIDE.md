@@ -1,3 +1,5 @@
+> **SQLite/MVVM update:** Read [MVVM_SQLITE_GUIDE.md](MVVM_SQLITE_GUIDE.md) alongside this guide. It describes the current layer boundaries and database lifecycle.
+
 # Provider Specialist Guide
 
 Provider is a thin, Flutter-friendly way to expose values down the widget tree.
@@ -9,7 +11,7 @@ state object; Provider supplies it, finds it, listens to it, and disposes it.
 There are three separate jobs in this project:
 
 1. `MovieRepository` performs I/O and converts remote data into domain models.
-2. `MovieCatalogController` and `FavoritesController` own mutable app state and
+2. `MovieCatalogViewModel` and `FavoritesViewModel` own mutable app state and
    business actions.
 3. Widgets render state and forward user intent to controllers.
 
@@ -53,7 +55,7 @@ behavior. Provider lookup still follows widget-tree ancestry.
 Gets `T` without subscribing the widget. Use it in event callbacks:
 
 ```dart
-onPressed: () => context.read<FavoritesController>().toggle(movie)
+onPressed: () => context.read<FavoritesViewModel>().toggle(movie)
 ```
 
 Do not use `read` to render a value that must update on screen.
@@ -91,8 +93,8 @@ providers.
 
 ## 3. Why this state is split
 
-`MovieCatalogController` changes during search, filter, and sort operations.
-`FavoritesController` changes when a heart is tapped. Combining them would make
+`MovieCatalogViewModel` changes during search, filter, and sort operations.
+`FavoritesViewModel` changes when a heart is tapped. Combining them would make
 their lifecycles and rebuild causes harder to reason about.
 
 Split state by cohesion and lifecycle, not by making one notifier for every
@@ -131,7 +133,7 @@ timeouts, API quotas, and structured error types.
 
 `FavoritesRepository` separates persistence from reactive state. The default
 implementation stores complete favorite movie records in SQLite; tests inject
-an in-memory fake. `FavoritesController` loads once at startup and performs an
+an in-memory fake. `FavoritesViewModel` loads once at startup and performs an
 optimistic toggle, rolling the UI back if the database write fails.
 
 Provider does not make SQLite reactive by itself. The repository owns storage;

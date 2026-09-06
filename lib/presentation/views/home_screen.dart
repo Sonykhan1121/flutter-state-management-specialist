@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import '../state/favorites_controller.dart';
-import '../state/movie_catalog_controller.dart';
-import '../widgets/movie_card.dart';
-import 'favorites_screen.dart';
+import 'package:provider_project/presentation/view_models/favorites_view_model.dart';
+import 'package:provider_project/presentation/view_models/movie_catalog_view_model.dart';
+import 'package:provider_project/presentation/widgets/movie_card.dart';
+import 'package:provider_project/presentation/views/favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -30,7 +30,7 @@ class _HomeScreenState extends State<HomeScreen> {
     _debounce?.cancel();
     _debounce = Timer(
       const Duration(milliseconds: 450),
-      () => context.read<MovieCatalogController>().search(value),
+      () => context.read<MovieCatalogViewModel>().search(value),
     );
   }
 
@@ -56,7 +56,7 @@ class _HomeScreenState extends State<HomeScreen> {
                 onChanged: _scheduleSearch,
                 onSubmitted: (value) {
                   _debounce?.cancel();
-                  context.read<MovieCatalogController>().search(value);
+                  context.read<MovieCatalogViewModel>().search(value);
                 },
                 decoration: InputDecoration(
                   hintText: 'Search IMDb movies',
@@ -112,7 +112,7 @@ class _FavoritesAction extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Selector<FavoritesController, int>(
+    return Selector<FavoritesViewModel, int>(
       selector: (_, favorites) => favorites.count,
       builder:
           (context, count, _) => Badge(
@@ -138,7 +138,7 @@ class _CatalogControls extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MovieCatalogController>(
+    return Consumer<MovieCatalogViewModel>(
       builder:
           (context, catalog, _) => Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -205,7 +205,7 @@ class _CatalogBody extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<MovieCatalogController>(
+    return Consumer<MovieCatalogViewModel>(
       builder: (context, catalog, _) {
         if (catalog.status == CatalogStatus.loading &&
             catalog.visibleMovies.isEmpty) {
@@ -281,7 +281,7 @@ class _CatalogBody extends StatelessWidget {
 class _CatalogFooter extends StatelessWidget {
   const _CatalogFooter({required this.catalog});
 
-  final MovieCatalogController catalog;
+  final MovieCatalogViewModel catalog;
 
   @override
   Widget build(BuildContext context) {

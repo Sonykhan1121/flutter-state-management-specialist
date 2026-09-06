@@ -1,4 +1,4 @@
-import '../models/movie.dart';
+import 'package:provider_project/domain/models/movie.dart';
 
 const sampleMovies = <Movie>[
   Movie(

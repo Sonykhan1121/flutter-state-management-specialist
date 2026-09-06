@@ -1,12 +1,12 @@
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider_project/state/movie_catalog_controller.dart';
+import 'package:provider_project/presentation/view_models/movie_catalog_view_model.dart';
 
 import 'fakes.dart';
 
 void main() {
   test('loads, filters, and sorts movies', () async {
     final repository = FakeMovieRepository(testMovies);
-    final controller = MovieCatalogController(repository);
+    final controller = MovieCatalogViewModel(repository);
 
     await controller.load();
 
@@ -23,7 +23,7 @@ void main() {
   });
 
   test('exposes repository failures for the UI', () async {
-    final controller = MovieCatalogController(
+    final controller = MovieCatalogViewModel(
       FakeMovieRepository(const [], error: Exception('offline')),
     );
 
@@ -38,7 +38,7 @@ void main() {
       testMovies,
       pages: {1: testMovies, 2: moreTestMovies},
     );
-    final controller = MovieCatalogController(repository);
+    final controller = MovieCatalogViewModel(repository);
 
     await controller.load();
     expect(controller.hasMore, isTrue);

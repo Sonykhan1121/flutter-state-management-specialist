@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'di/app_dependencies.dart';
 import 'package:provider/provider.dart';
 
-import 'data/favorites_repository.dart';
-import 'data/movie_repository.dart';
-import 'data/trailer_repository.dart';
-import 'screens/home_screen.dart';
-import 'state/favorites_controller.dart';
-import 'state/movie_catalog_controller.dart';
+import 'package:provider_project/domain/repositories/favorites_repository.dart';
+import 'package:provider_project/domain/repositories/movie_repository.dart';
+import 'package:provider_project/domain/repositories/trailer_repository.dart';
+import 'package:provider_project/presentation/views/home_screen.dart';
+import 'package:provider_project/presentation/view_models/favorites_view_model.dart';
+import 'package:provider_project/presentation/view_models/movie_catalog_view_model.dart';
 
-class MovieApp extends StatelessWidget {
+class MovieApp extends StatefulWidget {
   const MovieApp({
     super.key,
     this.repository,
@@ -21,28 +22,45 @@ class MovieApp extends StatelessWidget {
   final TrailerRepository? trailerRepository;
 
   @override
+  State<MovieApp> createState() => _MovieAppState();
+}
+
+class _MovieAppState extends State<MovieApp> {
+  late final AppDependencies _dependencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _dependencies = AppDependencies(
+      movies: widget.repository,
+      favorites: widget.favoritesRepository,
+      trailers: widget.trailerRepository,
+    );
+  }
+
+  @override
+  void dispose() {
+    _dependencies.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<MovieRepository>.value(
-          value: repository ?? createMovieRepository(),
-        ),
-        Provider<FavoritesRepository>.value(
-          value: favoritesRepository ?? createFavoritesRepository(),
-        ),
-        Provider<TrailerRepository>.value(
-          value: trailerRepository ?? createTrailerRepository(),
-        ),
+        Provider<MovieRepository>.value(value: _dependencies.movies),
+        Provider<FavoritesRepository>.value(value: _dependencies.favorites),
+        Provider<TrailerRepository>.value(value: _dependencies.trailers),
         ChangeNotifierProvider(
           create:
               (context) =>
-                  MovieCatalogController(context.read<MovieRepository>())
+                  MovieCatalogViewModel(context.read<MovieRepository>())
                     ..load(),
         ),
         ChangeNotifierProvider(
           create:
               (context) =>
-                  FavoritesController(context.read<FavoritesRepository>())
+                  FavoritesViewModel(context.read<FavoritesRepository>())
                     ..load(),
         ),
       ],

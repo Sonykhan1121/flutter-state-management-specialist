@@ -1,10 +1,9 @@
+import 'favorite_button.dart';
 import 'package:flutter/material.dart';
-import 'package:provider/provider.dart';
 
-import '../models/movie.dart';
-import '../screens/movie_details_screen.dart';
-import '../state/favorites_controller.dart';
-import 'movie_poster.dart';
+import 'package:provider_project/domain/models/movie.dart';
+import 'package:provider_project/presentation/views/movie_details_screen.dart';
+import 'package:provider_project/presentation/widgets/movie_poster.dart';
 
 class MovieCard extends StatelessWidget {
   const MovieCard({super.key, required this.movie});
@@ -33,27 +32,7 @@ class MovieCard extends StatelessWidget {
                   Positioned(
                     top: 4,
                     right: 4,
-                    child: Selector<FavoritesController, bool>(
-                      selector:
-                          (_, favorites) => favorites.isFavorite(movie.id),
-                      builder:
-                          (context, isFavorite, _) => IconButton.filledTonal(
-                            tooltip:
-                                isFavorite
-                                    ? 'Remove ${movie.title} from favorites'
-                                    : 'Add ${movie.title} to favorites',
-                            onPressed:
-                                () => context
-                                    .read<FavoritesController>()
-                                    .toggle(movie),
-                            icon: Icon(
-                              isFavorite
-                                  ? Icons.favorite
-                                  : Icons.favorite_border,
-                              color: isFavorite ? Colors.redAccent : null,
-                            ),
-                          ),
-                    ),
+                    child: FavoriteButton(movie: movie, filled: true),
                   ),
                 ],
               ),
