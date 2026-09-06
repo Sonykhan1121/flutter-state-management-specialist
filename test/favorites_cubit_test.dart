@@ -1,6 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider_project/bloc/favorites_cubit.dart';
+import 'package:provider_project/presentation/view_models/favorites_cubit.dart';
 
 import 'fakes.dart';
 
@@ -28,7 +28,7 @@ void main() {
   );
 
   blocTest<FavoritesCubit, FavoritesState>(
-    'toggle adds and removes a favorite',
+    'toggle exposes pending and committed state for add and remove',
     build: () => FavoritesCubit(FakeFavoritesRepository()),
     act: (cubit) async {
       await cubit.toggle(testMovies.first);
@@ -37,15 +37,17 @@ void main() {
     expect:
         () => [
           isA<FavoritesState>()
-              .having((state) => state.count, 'count', 1)
-              .having(
-                (state) => state.isFavorite(testMovies.first.id),
-                'is favorite',
-                isTrue,
-              ),
+              .having((s) => s.count, 'count', 1)
+              .having((s) => s.isBusy(testMovies.first.id), 'saving', true),
           isA<FavoritesState>()
-              .having((state) => state.count, 'count', 0)
-              .having((state) => state.movies, 'movies', isEmpty),
+              .having((s) => s.count, 'count', 1)
+              .having((s) => s.isBusy(testMovies.first.id), 'saved', false),
+          isA<FavoritesState>()
+              .having((s) => s.count, 'count', 0)
+              .having((s) => s.isBusy(testMovies.first.id), 'removing', true),
+          isA<FavoritesState>()
+              .having((s) => s.count, 'count', 0)
+              .having((s) => s.isBusy(testMovies.first.id), 'removed', false),
         ],
   );
 }

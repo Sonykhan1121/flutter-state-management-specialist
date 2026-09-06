@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import 'di/app_dependencies.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'bloc/favorites_cubit.dart';
-import 'bloc/movie_catalog_bloc.dart';
-import 'data/favorites_repository.dart';
-import 'data/movie_repository.dart';
-import 'data/trailer_repository.dart';
-import 'screens/home_screen.dart';
+import 'package:provider_project/presentation/view_models/favorites_cubit.dart';
+import 'package:provider_project/presentation/view_models/movie_catalog_bloc.dart';
+import 'package:provider_project/domain/repositories/favorites_repository.dart';
+import 'package:provider_project/domain/repositories/movie_repository.dart';
+import 'package:provider_project/domain/repositories/trailer_repository.dart';
+import 'package:provider_project/presentation/views/home_screen.dart';
 
-class MovieApp extends StatelessWidget {
+class MovieApp extends StatefulWidget {
   const MovieApp({
     super.key,
     this.repository,
@@ -21,17 +22,38 @@ class MovieApp extends StatelessWidget {
   final TrailerRepository? trailerRepository;
 
   @override
+  State<MovieApp> createState() => _MovieAppState();
+}
+
+class _MovieAppState extends State<MovieApp> {
+  late final AppDependencies _dependencies;
+
+  @override
+  void initState() {
+    super.initState();
+    _dependencies = AppDependencies(
+      movies: widget.repository,
+      favorites: widget.favoritesRepository,
+      trailers: widget.trailerRepository,
+    );
+  }
+
+  @override
+  void dispose() {
+    _dependencies.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) {
     return MultiRepositoryProvider(
       providers: [
-        RepositoryProvider<MovieRepository>.value(
-          value: repository ?? createMovieRepository(),
-        ),
+        RepositoryProvider<MovieRepository>.value(value: _dependencies.movies),
         RepositoryProvider<FavoritesRepository>.value(
-          value: favoritesRepository ?? createFavoritesRepository(),
+          value: _dependencies.favorites,
         ),
         RepositoryProvider<TrailerRepository>.value(
-          value: trailerRepository ?? createTrailerRepository(),
+          value: _dependencies.trailers,
         ),
       ],
       child: MultiBlocProvider(

@@ -1,6 +1,6 @@
-import 'package:provider_project/data/favorites_repository.dart';
-import 'package:provider_project/data/movie_repository.dart';
-import 'package:provider_project/models/movie.dart';
+import 'package:provider_project/domain/repositories/favorites_repository.dart';
+import 'package:provider_project/domain/repositories/movie_repository.dart';
+import 'package:provider_project/domain/models/movie.dart';
 
 class FakeMovieRepository implements MovieRepository {
   FakeMovieRepository(

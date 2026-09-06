@@ -1,3 +1,5 @@
+> **SQLite/MVVM update:** Read [MVVM_SQLITE_GUIDE.md](MVVM_SQLITE_GUIDE.md) alongside this guide. It describes the current layer boundaries and database lifecycle.
+
 # Bloc Specialist Guide
 
 Bloc makes state transitions explicit. Widgets send events, a Bloc transforms

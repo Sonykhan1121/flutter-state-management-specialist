@@ -1,80 +1,69 @@
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:youtube_player_iframe/youtube_player_iframe.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
+import '../../domain/models/movie.dart';
+import '../../domain/repositories/trailer_repository.dart';
+import '../models/trailer_state.dart';
+import '../view_models/trailer_view_model.dart';
 
-import '../data/trailer_repository.dart';
-import '../models/movie.dart';
-
-class TrailerScreen extends StatefulWidget {
+class TrailerScreen extends StatelessWidget {
   const TrailerScreen({
     super.key,
     required this.movie,
     required this.repository,
   });
-
   final Movie movie;
   final TrailerRepository repository;
-
-  @override
-  State<TrailerScreen> createState() => _TrailerScreenState();
-}
-
-class _TrailerScreenState extends State<TrailerScreen> {
-  late Future<Trailer?> _trailerFuture;
-
-  @override
-  void initState() {
-    super.initState();
-    _trailerFuture = widget.repository.findTrailer(widget.movie);
-  }
-
-  void _retry() {
-    setState(() {
-      _trailerFuture = widget.repository.findTrailer(widget.movie);
-    });
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!widget.repository.canSearchAutomatically) {
-      return _TrailerFallbackScaffold(
-        movie: widget.movie,
-        repository: widget.repository,
-        message:
-            'Add YOUTUBE_API_KEY to auto-find and play trailers. '
-            'You can still search YouTube in the in-app browser.',
+    return BlocProvider(
+      create: (_) => TrailerCubit(repository, movie)..load(),
+      child: BlocBuilder<TrailerCubit, TrailerState>(
+        builder:
+            (context, state) => _TrailerBody(
+              state: state,
+              onRetry: context.read<TrailerCubit>().load,
+            ),
+      ),
+    );
+  }
+}
+
+class _TrailerBody extends StatelessWidget {
+  const _TrailerBody({required this.state, required this.onRetry});
+  final TrailerState state;
+  final VoidCallback onRetry;
+  @override
+  Widget build(BuildContext context) {
+    if (state.isLoading) {
+      return const Scaffold(
+        appBar: _TrailerAppBar(),
+        body: Center(child: CircularProgressIndicator()),
       );
     }
-
-    return FutureBuilder<Trailer?>(
-      future: _trailerFuture,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState != ConnectionState.done) {
-          return const Scaffold(
-            appBar: _TrailerAppBar(),
-            body: Center(child: CircularProgressIndicator()),
-          );
-        }
-        if (snapshot.hasError) {
-          return _TrailerFallbackScaffold(
-            movie: widget.movie,
-            repository: widget.repository,
-            message: 'Could not load the trailer: ${snapshot.error}',
-            onRetry: _retry,
-          );
-        }
-        final trailer = snapshot.data;
-        if (trailer == null) {
-          return _TrailerFallbackScaffold(
-            movie: widget.movie,
-            repository: widget.repository,
-            message: 'No embeddable trailer was found automatically.',
-            onRetry: _retry,
-          );
-        }
-        return _TrailerPlayerScaffold(trailer: trailer);
-      },
-    );
+    if (!state.canSearchAutomatically) {
+      return _TrailerFallbackScaffold(
+        searchUri: state.searchUri,
+        message:
+            'Automatic trailer search is not configured. You can search YouTube in the in-app browser.',
+      );
+    }
+    if (state.errorMessage != null) {
+      return _TrailerFallbackScaffold(
+        searchUri: state.searchUri,
+        message: state.errorMessage!,
+        onRetry: onRetry,
+      );
+    }
+    if (state.trailer == null) {
+      return _TrailerFallbackScaffold(
+        searchUri: state.searchUri,
+        message: 'No embeddable trailer was found automatically.',
+        onRetry: onRetry,
+      );
+    }
+    return _TrailerPlayerScaffold(trailer: state.trailer!);
   }
 }
 
@@ -148,14 +137,12 @@ class _TrailerPlayerScaffoldState extends State<_TrailerPlayerScaffold> {
 
 class _TrailerFallbackScaffold extends StatelessWidget {
   const _TrailerFallbackScaffold({
-    required this.movie,
-    required this.repository,
+    required this.searchUri,
     required this.message,
     this.onRetry,
   });
 
-  final Movie movie;
-  final TrailerRepository repository;
+  final Uri searchUri;
   final String message;
   final VoidCallback? onRetry;
 
@@ -191,7 +178,7 @@ class _TrailerFallbackScaffold extends StatelessWidget {
 
   Future<void> _openSearch(BuildContext context) async {
     final opened = await launchUrl(
-      repository.youtubeSearchUri(movie),
+      searchUri,
       mode: LaunchMode.inAppBrowserView,
     );
     if (!opened && context.mounted) {

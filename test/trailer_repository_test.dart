@@ -1,9 +1,9 @@
+import 'package:provider_project/data/repositories/trailer_repository.dart';
 import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
-import 'package:provider_project/data/trailer_repository.dart';
 
 import 'fakes.dart';
 

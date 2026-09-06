@@ -1,11 +1,11 @@
+import '../widgets/favorite_button.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/favorites_cubit.dart';
-import '../data/trailer_repository.dart';
-import '../models/movie.dart';
-import '../widgets/movie_poster.dart';
-import 'trailer_screen.dart';
+import 'package:provider_project/domain/repositories/trailer_repository.dart';
+import 'package:provider_project/domain/models/movie.dart';
+import 'package:provider_project/presentation/widgets/movie_poster.dart';
+import 'package:provider_project/presentation/views/trailer_screen.dart';
 
 class MovieDetailsScreen extends StatelessWidget {
   const MovieDetailsScreen({super.key, required this.movie});
@@ -17,22 +17,7 @@ class MovieDetailsScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Movie details'),
-        actions: [
-          BlocSelector<FavoritesCubit, FavoritesState, bool>(
-            selector: (favorites) => favorites.isFavorite(movie.id),
-            builder:
-                (context, isFavorite) => IconButton(
-                  tooltip:
-                      isFavorite ? 'Remove from favorites' : 'Add to favorites',
-                  onPressed: () => context.read<FavoritesCubit>().toggle(movie),
-                  icon: Icon(
-                    isFavorite ? Icons.favorite : Icons.favorite_border,
-                    color: isFavorite ? Colors.redAccent : null,
-                  ),
-                ),
-          ),
-          const SizedBox(width: 8),
-        ],
+        actions: [FavoriteButton(movie: movie), const SizedBox(width: 8)],
       ),
       body: LayoutBuilder(
         builder: (context, constraints) {

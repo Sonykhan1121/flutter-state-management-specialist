@@ -31,9 +31,7 @@ flutter pub get
 flutter run
 ```
 
-The bundled catalog is used when no API key is supplied. This checkout already
-has an ignored local `omdb.json`. To make your own local config, copy and edit
-the safe template:
+The bundled catalog is used when no API key is supplied. To make a local config, copy and edit the ignored config from the safe template:
 
 ```sh
 cp omdb.example.json omdb.json
@@ -64,19 +62,23 @@ Favorites are stored in the device's `movie_explorer.db` SQLite database and
 survive app restarts. For production, also add request caching, throttling, and
 a backend that protects API keys.
 
+## SQLite and MVVM
+
+Start with [MVVM_SQLITE_GUIDE.md](MVVM_SQLITE_GUIDE.md) for the layer map, database migration, dependency lifetime, and hands-on exercises.
+
 ## Learn the architecture
 
 Read [BLOC_SPECIALIST_GUIDE.md](BLOC_SPECIALIST_GUIDE.md), then explore:
 
 - `lib/app.dart` — `RepositoryProvider` and `MultiBlocProvider`
-- `lib/bloc/movie_catalog_bloc.dart` — events, immutable state, async work,
+- `lib/presentation/view_models/movie_catalog_bloc.dart` — events, immutable state, async work,
   derived views, and stale-request protection
-- `lib/bloc/favorites_cubit.dart` — a small Cubit with immutable state
-- `lib/screens/home_screen.dart` — `BlocBuilder`, `BlocSelector`, and `read`
-- `lib/data/movie_repository.dart` — API boundary and testable abstraction
-- `lib/data/favorites_repository.dart` — SQLite schema and persistence
-- `lib/data/trailer_repository.dart` — YouTube Data API search
-- `lib/screens/trailer_screen.dart` — inline YouTube player and fallback
+- `lib/presentation/view_models/favorites_cubit.dart` — a small Cubit with immutable state
+- `lib/presentation/views/home_screen.dart` — `BlocBuilder`, `BlocSelector`, and `read`
+- `lib/data/repositories/movie_repository.dart` — API boundary and testable abstraction
+- `lib/domain/repositories/favorites_repository.dart` — storage interface (implementation and schema are described in the MVVM guide)
+- `lib/data/repositories/trailer_repository.dart` — YouTube Data API search
+- `lib/presentation/views/trailer_screen.dart` — inline YouTube player and fallback
 - `test/movie_catalog_bloc_test.dart` — transition-focused `bloc_test` examples
 
 Run the checks with:

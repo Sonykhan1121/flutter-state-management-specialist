@@ -1,7 +1,7 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../data/movie_repository.dart';
-import '../models/movie.dart';
+import 'package:provider_project/domain/repositories/movie_repository.dart';
+import 'package:provider_project/domain/models/movie.dart';
 
 enum CatalogStatus { initial, loading, success, error }
 

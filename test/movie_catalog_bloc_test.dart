@@ -1,6 +1,6 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:provider_project/bloc/movie_catalog_bloc.dart';
+import 'package:provider_project/presentation/view_models/movie_catalog_bloc.dart';
 
 import 'fakes.dart';
 

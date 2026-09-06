@@ -3,10 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../bloc/favorites_cubit.dart';
-import '../bloc/movie_catalog_bloc.dart';
-import '../widgets/movie_card.dart';
-import 'favorites_screen.dart';
+import 'package:provider_project/presentation/view_models/favorites_cubit.dart';
+import 'package:provider_project/presentation/view_models/movie_catalog_bloc.dart';
+import 'package:provider_project/presentation/widgets/movie_card.dart';
+import 'package:provider_project/presentation/views/favorites_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
